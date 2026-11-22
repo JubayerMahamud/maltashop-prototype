@@ -25,7 +25,7 @@ jobs:
           pip install pytest
 
       - name: Run unit and saga tests
-        env:
-          PYTHONPATH: .
-          DB_PATH: /tmp/maltashop_test.db
-        run: pytest
+        run: |
+          sudo mkdir -p /data
+          sudo chmod 777 /data
+          pytest
