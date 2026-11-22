@@ -1,0 +1,58 @@
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    rabbitmq:
+      condition: service_healthy
+  environment: &env
+    RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rabbitmq:5672/
+    ENVIRONMENT: ${ENVIRONMENT:-local}
+    APP_VERSION: ${APP_VERSION:-dev}
+    DB_PATH: /data/service.db
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "15672:15672"   # management UI
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  order:
+    <<: *service
+    build: { context: ., dockerfile: order/Dockerfile }
+    environment: { <<: *env, SERVICE_NAME: order }
+    ports: ["8000:8000"]
+    volumes: ["order-data:/data"]
+
+  inventory:
+    <<: *service
+    build: { context: ., dockerfile: inventory/Dockerfile }
+    environment: { <<: *env, SERVICE_NAME: inventory }
+    ports: ["8001:8000"]
+    volumes: ["inventory-data:/data"]
+
+  payment:
+    <<: *service
+    build: { context: ., dockerfile: payment/Dockerfile }
+    environment: { <<: *env, SERVICE_NAME: payment }
+    ports: ["8002:8000"]
+    volumes: ["payment-data:/data"]
+
+  notification:
+    <<: *service
+    build: { context: ., dockerfile: notification/Dockerfile }
+    environment: { <<: *env, SERVICE_NAME: notification }
+    ports: ["8003:8000"]
+    volumes: ["notification-data:/data"]
+
+volumes:
+  order-data:
+  inventory-data:
+  payment-data:
+  notification-data:
