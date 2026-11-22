@@ -25,4 +25,7 @@ jobs:
           pip install pytest
 
       - name: Run unit and saga tests
-        run: pytest
+        run: |
+          sudo mkdir -p /data
+          sudo chmod 777 /data
+          pytest
